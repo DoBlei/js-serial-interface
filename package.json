@@ -1,0 +1,23 @@
+{
+  "name": "serial-interface",
+  "version": "1.0.0",
+  "description": "A Node program to interface with a serial port and display the received data in a graph (with real-time support)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "serial",
+    "data",
+    "graph",
+    "mikrocontroller",
+    "arduino",
+    "esp"
+  ],
+  "author": "Dominik Bleitner",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "serialport": "^9.0.1"
+  }
+}
