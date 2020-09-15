@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JS Serial Plotter</title>
+    <!-- Compiled and minified CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css"
+    />
+    <!-- Compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <link rel="stylesheet" href="/styles/style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@500&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <header>
+      <h1>JS Serial Plotter</h1>
+    </header>
+    <div class="container">
+      <form action="/" method="post">
+        <label for="port">verf. Ports: </label>
+        <select class="browser-default" name="port">
+          <option value="" disabled selected>Wähle einen Port</option>
+          <% Ports.forEach( function(port){ %>
+          <option value="<%= port %>"><%= port %></option>
+          <% }); %>
+        </select>
+        <label for="baud">BAUD-Rate</label>
+        <select class="browser-default" name="baud">
+          <option value="" disabled selected>Wähle eine BAUD-Rate</option>
+          <option value="9600">9600</option>
+          <option value="19200">19200</option>
+          <option value="57600">57600</option>
+          <option value="115200">115200</option>
+          <option value="230400">230400</option>
+          <option value="500000">500k</option>
+          <option value="1000000">1M</option>
+        </select>
+        <br />
+        <input type="submit" value="verbinden" />
+      </form>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        var elems = document.querySelectorAll("select");
+        var instances = M.FormSelect.init(elems, options);
+      });
+    </script>
+  </body>
+</html>

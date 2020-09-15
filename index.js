@@ -1,36 +1,59 @@
 let Serial = require("serialport");
 let express = require("express");
+let bodyParser = require("body-parser");
 let ReadLine = require("@serialport/parser-readline");
+require("dotenv").config();
 
-const BAUD = [9600, 115200, 230400];
+const app_port = process.env.SRV_PORT | 8080;
 
-let data = [];
-let available_ports = [];
+const app = express();
 
-for (let i = 0; i < 1024; i++) {
-  data.push(0);
-}
+app.use(express.static("public"));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-Serial.list().then((value) => {
-  value.forEach((element) => {
-    available_ports.push(element.path);
-    main();
+app.set("view engine", "ejs");
+
+app.get("/data/:PORT/:BAUD", async (req, res) => {
+  const port = req.params.PORT;
+  const baud = req.params.BAUD;
+
+  let serial = new Serial(port, { baudRate: parseInt(baud) });
+  let parser = new ReadLine();
+
+  let data = [];
+  let counter = 0;
+
+  serial.pipe(serial);
+  parser.on("data", (line) => {
+    if (counter < 1024) {
+      data.push(parseFloat(line));
+      counter++;
+    }
   });
+
+  if (counter == 1024) {
+    let answer = {
+      port,
+      baud,
+      data,
+    };
+
+    data = [];
+    res.json(answer);
+    serial.close();
+  }
 });
 
-function main() {
-  console.log(`Available Ports:\n\t${available_ports}`);
-  console.log("Starting...\n");
+app.get("/", async (req, res) => {
+  let ports = await Serial.list();
+  let port_paths = [];
+  ports.forEach((elem) => port_paths.push(elem.path));
+  res.render("index", { Ports: port_paths });
+});
 
-  // opening a serial port
-  const Port = new Serial("COM3", { baudRate: 230400 });
+app.post("/", async (req, res) => {
+  res.render("graph", req.body);
+});
 
-  // parse data on receiving with parser (async)
-  const parser = new ReadLine();
-  Port.pipe(parser);
-  parser.on("data", (line) => {
-    data.shift();
-    data[1023] = parseFloat(line);
-    console.log(data);
-  });
-}
+app.listen(app_port);

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JS Serial Plotter</title>
+    <!-- Compiled and minified CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css"
+    />
+    <!-- Compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.bundle.min.js"></script>
+    <link rel="stylesheet" href="/styles/style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>JS Serial Plotter</h1>
+    </header>
+    <div class="container">
+      <canvas id="chart"></canvas>
+    </div>
+    <script>
+        const port = "<%= port %>";
+        const baud = <%= baud %>;
+
+        let chart = document.getElementById("chart").getContext("2d");
+        let datapoints = [0, 1, 4, 9, 16, 25, 36, 49];
+        let config = {
+          type: 'line',
+          data: {
+            labels: [0, 1, 2, 3, 4, 5, 6, 7],
+            datasets: [{
+              data: datapoints,
+              backgroundColor: "rgba(0,0,0,0)",
+              borderColor: "rgba(0,255,0,0.5)",
+              borderWidth: 1,
+            }]
+          },
+          options: {
+            responsive: true,
+            legend: {
+              position: "right",
+              display: false,
+            },
+            scales: {
+              xAxes: [{
+                display: true,
+                scaleLabel: {
+                display: true,
+                },
+              }],
+              yAxes: [{
+                display: true,
+                scaleLabel: {
+                  display: true,
+                },
+              }]
+            },
+            title: {
+              display: true,
+              text: `${port} @ ${baud} BAUD`,
+            }
+          }
+      };
+
+      window.onload = () => {
+        window.myChart = new Chart(chart, config);
+      };
+
+      window.setInterval(async () => {
+
+        let res = await fetch(window.location.href + "data/" + port + "/" + baud);
+        if (res.ok) {
+          let json = await res.json();
+          console.log(json);
+          config = {
+            type: 'line',
+            data: {
+              datasets: [{
+                data: json.data,
+                backgroundColor: "rgba(0,0,0,0)",
+                borderColor: "rgba(0,255,0,0.5)",
+                borderWidth: 1,
+              }]
+            },
+            options: {
+              responsive: true,
+              legend: {
+                position: "right",
+                display: false,
+              },
+              scales: {
+                xAxes: [{
+                  display: true,
+                  scaleLabel: {
+                    display: true,
+                  },
+                }],
+                yAxes: [{
+                  display: true,
+                  scaleLabel: {
+                    display: true,
+                  },
+                }]
+              },
+              title: {
+                display: true,
+                text: `${port} @ ${baud} BAUD`,
+              }
+            }
+          };
+
+          window.myChart = new Chart(chart, config);
+        }
+      }, 500);
+    </script>
+  </body>
+</html>
