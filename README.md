@@ -8,6 +8,10 @@ This little project should allow the user to connect to a serial port via a web 
 
 - [x] check reading from serial --> serialport node package
 - [x] listing available serial ports
-- [ ] read data in request handler
-- [ ] display data (real-time)
+- [x] read data in request handler
+- [x] display data (real-time)
+- [ ] error checking
+  - [ ] no port/no baud rate chosen
+  - [ ] refresh available port regularly on index
+  - [ ] disable currently active ports
 - [ ] implement sending commands from interface to serial port
