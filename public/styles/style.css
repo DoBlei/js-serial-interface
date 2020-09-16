@@ -32,3 +32,17 @@ form input {
   grid-column: 2 / 3;
   margin-top: 5em;
 }
+
+#close {
+  width: 100%;
+  height: 1.5em;
+}
+
+#chart {
+  border: 1px solid black;
+  padding: 4px;
+  margin-bottom: 1em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}

@@ -11,7 +11,12 @@
     />
     <!-- Compiled and minified JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.bundle.min.js"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/p5.min.js"
+      integrity="sha512-WIklPM6qPCIp6d3fSSr90j+1unQHUOoWDS4sdTiR8gxUTnyZ8S2Mr8e10sKKJ/bhJgpAa/qG068RDkg6fIlNFA=="
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@2/dist/socket.io.js"></script>
     <link rel="stylesheet" href="/styles/style.css" />
   </head>
   <body>
@@ -19,102 +24,64 @@
       <h1>JS Serial Plotter</h1>
     </header>
     <div class="container">
-      <canvas id="chart"></canvas>
+      <div id="chart"></div>
+      <button type="submit" id="close">schließen</button>
     </div>
     <script>
-        const port = "<%= port %>";
-        const baud = <%= baud %>;
+      const port = "<%= port %>";
+      const baud = parseInt("<%= baud %>");
 
-        let chart = document.getElementById("chart").getContext("2d");
-        let datapoints = [0, 1, 4, 9, 16, 25, 36, 49];
-        let config = {
-          type: 'line',
-          data: {
-            labels: [0, 1, 2, 3, 4, 5, 6, 7],
-            datasets: [{
-              data: datapoints,
-              backgroundColor: "rgba(0,0,0,0)",
-              borderColor: "rgba(0,255,0,0.5)",
-              borderWidth: 1,
-            }]
-          },
-          options: {
-            responsive: true,
-            legend: {
-              position: "right",
-              display: false,
-            },
-            scales: {
-              xAxes: [{
-                display: true,
-                scaleLabel: {
-                display: true,
-                },
-              }],
-              yAxes: [{
-                display: true,
-                scaleLabel: {
-                  display: true,
-                },
-              }]
-            },
-            title: {
-              display: true,
-              text: `${port} @ ${baud} BAUD`,
-            }
-          }
-      };
+      let socket = io("http://localhost:8080");
 
-      window.onload = () => {
-        window.myChart = new Chart(chart, config);
-      };
+      let closeBtn = document.getElementById("close");
+      let chart = document.getElementById("chart");
+      let y = [];
 
-      window.setInterval(async () => {
+      function setup() {
+        let canv = createCanvas(chart.offsetWidth - 10, 512);
+        canv.parent("chart");
+        textSize(16);
+        socket.emit("open", { port, baud });
+      }
 
-        let res = await fetch(window.location.href + "data/" + port + "/" + baud);
-        if (res.ok) {
-          let json = await res.json();
-          console.log(json);
-          config = {
-            type: 'line',
-            data: {
-              datasets: [{
-                data: json.data,
-                backgroundColor: "rgba(0,0,0,0)",
-                borderColor: "rgba(0,255,0,0.5)",
-                borderWidth: 1,
-              }]
-            },
-            options: {
-              responsive: true,
-              legend: {
-                position: "right",
-                display: false,
-              },
-              scales: {
-                xAxes: [{
-                  display: true,
-                  scaleLabel: {
-                    display: true,
-                  },
-                }],
-                yAxes: [{
-                  display: true,
-                  scaleLabel: {
-                    display: true,
-                  },
-                }]
-              },
-              title: {
-                display: true,
-                text: `${port} @ ${baud} BAUD`,
-              }
-            }
-          };
+      function windowResized() {
+        resizeCanvas(chart.offsetWidth - 10, 512);
+      }
 
-          window.myChart = new Chart(chart, config);
+      closeBtn.addEventListener("click", () => {
+        socket.emit("close", { port, baud });
+        socket.close();
+        window.location.href = "http://localhost:8080";
+      });
+
+      socket.on("data", (data) => {
+        if (y.length < 512) {
+          y.push(data.value);
+        } else {
+          y.shift();
+          y[511] = data.value;
         }
-      }, 500);
+
+        let max = Math.max(...y) | 1;
+        let min = Math.min(...y) | 0;
+
+        let max_y = parseInt(1.1 * max);
+        let min_y = parseInt(0.25 * min);
+
+        background(255);
+
+        stroke(0);
+        fill(0);
+        text(`${max_y}`, 0, 20);
+        text(`${min_y}`, 0, height - 4);
+
+        noFill();
+        beginShape();
+        y.forEach((e, i) => {
+          vertex((i * width) / 512, height - ((e - min_y) / max_y) * height);
+        });
+        endShape();
+      });
     </script>
   </body>
 </html>

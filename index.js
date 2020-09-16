@@ -1,6 +1,7 @@
 let Serial = require("serialport");
 let express = require("express");
 let bodyParser = require("body-parser");
+let socket = require("socket.io");
 let ReadLine = require("@serialport/parser-readline");
 require("dotenv").config();
 
@@ -17,7 +18,7 @@ app.set("view engine", "ejs");
 app.get("/data/:PORT/:BAUD", async (req, res) => {
   const port = req.params.PORT;
   const baud = req.params.BAUD;
-
+  /*
   let serial = new Serial(port, { baudRate: parseInt(baud) });
   let parser = new ReadLine();
 
@@ -31,18 +32,25 @@ app.get("/data/:PORT/:BAUD", async (req, res) => {
       counter++;
     }
   });
+*/
+  let data = [
+    Math.random(),
+    Math.random(),
+    Math.random(),
+    Math.random(),
+    Math.random(),
+    Math.random(),
+    Math.random(),
+    Math.random(),
+  ];
 
-  if (counter == 1024) {
-    let answer = {
-      port,
-      baud,
-      data,
-    };
+  let answer = {
+    port,
+    baud,
+    data,
+  };
 
-    data = [];
-    res.json(answer);
-    serial.close();
-  }
+  res.json(answer);
 });
 
 app.get("/", async (req, res) => {
@@ -56,4 +64,33 @@ app.post("/", async (req, res) => {
   res.render("graph", req.body);
 });
 
-app.listen(app_port);
+let srv = app.listen(app_port, () => {
+  console.log(`Listening on :${app_port}`);
+});
+
+let io = socket(srv, {
+  // OPTIONS
+});
+
+io.on("connection", (cli) => {
+  let serial;
+  cli.on("open", (data) => {
+    console.log(`Opening ${data.port} @ ${data.baud}`);
+    serial = new Serial(data.port, { baudRate: data.baud });
+    let parser = new ReadLine();
+    serial.pipe(parser);
+
+    parser.on("data", (line) => {
+      cli.emit("data", {
+        value: parseFloat(line),
+      });
+    });
+  });
+
+  cli.on("close", (data) => {
+    if (serial) {
+      console.log(`Closing ${data.port} @ ${data.baud}`);
+      serial.close();
+    }
+  });
+});
