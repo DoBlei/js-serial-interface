@@ -10,8 +10,10 @@ This little project should allow the user to connect to a serial port via a web 
 - [x] listing available serial ports
 - [x] read data in request handler
 - [x] display data (real-time)
+  - [x] pause/continue
+  - [x] export current snapshot as csv
 - [ ] error checking
   - [ ] no port/no baud rate chosen
-  - [ ] refresh available port regularly on index
+  - [x] refresh available ports
   - [ ] disable currently active ports
 - [ ] implement sending commands from interface to serial port

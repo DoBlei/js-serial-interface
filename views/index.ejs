@@ -4,34 +4,36 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>JS Serial Plotter</title>
-    <!-- Compiled and minified CSS -->
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css"
     />
-    <!-- Compiled and minified JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
     <link rel="stylesheet" href="/styles/style.css" />
     <link
       href="https://fonts.googleapis.com/css2?family=Syne:wght@500&display=swap"
       rel="stylesheet"
     />
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@2/dist/socket.io.js"></script>
   </head>
   <body>
     <header>
       <h1>JS Serial Plotter</h1>
     </header>
     <div class="container">
-      <form action="/" method="post">
+      <form id="startmenu" action="/" method="post">
         <label for="port">verf. Ports: </label>
-        <select class="browser-default" name="port">
-          <option value="" disabled selected>Wähle einen Port</option>
-          <% Ports.forEach( function(port){ %>
-          <option value="<%= port %>"><%= port %></option>
-          <% }); %>
-        </select>
+        <div id="port_parent">
+          <select class="browser-default" id="port" name="port">
+            <option value="" disabled selected>Wähle einen Port</option>
+            <% Ports.forEach( function(port){ %>
+            <option value="<%= port %>"><%= port %></option>
+            <% }); %>
+          </select>
+          <input type="button" id="refresh" class="control" value="↻" />
+        </div>
         <label for="baud">BAUD-Rate</label>
-        <select class="browser-default" name="baud">
+        <select class="browser-default" id="baud" name="baud">
           <option value="" disabled selected>Wähle eine BAUD-Rate</option>
           <option value="9600">9600</option>
           <option value="19200">19200</option>
@@ -45,5 +47,24 @@
         <input type="submit" value="verbinden" />
       </form>
     </div>
+    <script>
+      let refreshBtn = document.getElementById("refresh");
+      let portsSlct = document.getElementById("port");
+
+      let socket = io(window.location.origin);
+
+      socket.on("ports", (data) => {
+        portsSlct.innerHTML = `<option value="" disabled selected>Wähle einen Port</option>`;
+        if (data.ports) {
+          data.ports.forEach((element) => {
+            portsSlct.innerHTML += `<option value="${element}">${element}</option>`;
+          });
+        }
+      });
+
+      refreshBtn.addEventListener("click", () => {
+        socket.emit("ports", {});
+      });
+    </script>
   </body>
 </html>

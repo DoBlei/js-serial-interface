@@ -4,12 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>JS Serial Plotter</title>
-    <!-- Compiled and minified CSS -->
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css"
     />
-    <!-- Compiled and minified JavaScript -->
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
     <script
       src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/p5.min.js"
@@ -25,17 +27,47 @@
     </header>
     <div class="container">
       <div id="chart"></div>
+      <div id="controls">
+        <button disabled class="material-icons control" id="start">
+          play_arrow
+        </button>
+        <button class="material-icons control" id="stop">pause</button>
+        <button class="material-icons control" id="save">file_download</button>
+      </div>
       <button type="submit" id="close">schließen</button>
     </div>
     <script>
       const port = "<%= port %>";
       const baud = parseInt("<%= baud %>");
 
-      let socket = io("http://localhost:8080");
+      let socket = io(window.location.origin);
 
       let closeBtn = document.getElementById("close");
+
+      // controls for the graph
+      let stopBtn = document.getElementById("stop");
+      let startBtn = document.getElementById("start");
+      let saveBtn = document.getElementById("save");
+
       let chart = document.getElementById("chart");
       let y = [];
+      let active = 1;
+
+      function download_csv(data) {
+        var link = document.createElement("a");
+        link.setAttribute(
+          "href",
+          `data:text/plain;charset=utf-8,Data\n${encodeURIComponent(
+            data.join("\n")
+          )}`
+        );
+        link.setAttribute("download", `js_serial.csv`);
+
+        link.style.display = "none";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
 
       function setup() {
         let canv = createCanvas(chart.offsetWidth - 10, 512);
@@ -51,36 +83,56 @@
       closeBtn.addEventListener("click", () => {
         socket.emit("close", { port, baud });
         socket.close();
-        window.location.href = "http://localhost:8080";
+        window.location.href = window.location.origin;
+      });
+
+      stopBtn.addEventListener("click", () => {
+        active = active ^ 1;
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+      });
+
+      startBtn.addEventListener("click", () => {
+        active = active ^ 1;
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+      });
+
+      saveBtn.addEventListener("click", () => {
+        download_csv(y);
       });
 
       socket.on("data", (data) => {
-        if (y.length < 512) {
-          y.push(data.value);
-        } else {
-          y.shift();
-          y[511] = data.value;
+        if (active === 1) {
+          if (y.length < 512) {
+            y.push(data.value);
+          } else {
+            y.shift();
+            y[511] = data.value;
+          }
+
+          let max = Math.max(...y) | 1;
+          let min = Math.min(...y) | 0;
+
+          let max_y = parseInt(1.25 * max);
+          let min_y = parseInt(0.75 * min);
+
+          let span = max_y - min_y;
+
+          background(255);
+
+          stroke(0);
+          fill(0);
+          text(`${max_y}`, 0, 20);
+          text(`${min_y}`, 0, height - 4);
+
+          noFill();
+          beginShape();
+          y.forEach((e, i) => {
+            vertex((i * width) / 512, height - ((e - min_y) / span) * height);
+          });
+          endShape();
         }
-
-        let max = Math.max(...y) | 1;
-        let min = Math.min(...y) | 0;
-
-        let max_y = parseInt(1.1 * max);
-        let min_y = parseInt(0.25 * min);
-
-        background(255);
-
-        stroke(0);
-        fill(0);
-        text(`${max_y}`, 0, 20);
-        text(`${min_y}`, 0, height - 4);
-
-        noFill();
-        beginShape();
-        y.forEach((e, i) => {
-          vertex((i * width) / 512, height - ((e - min_y) / max_y) * height);
-        });
-        endShape();
       });
     </script>
   </body>
