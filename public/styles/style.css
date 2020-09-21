@@ -51,13 +51,16 @@ select {
 .control:hover {
   background-color: #ddd;
 }
+
 #startmenu {
   width: 75vw;
   min-width: 300px;
 }
+
 #close {
   width: 100%;
   height: 1.5em;
+  margin: 0.5em 0 0 0;
 }
 
 #chart {
@@ -99,4 +102,26 @@ select {
 #save {
   grid-column: 4 / 5;
   font-size: 1.75em;
+}
+
+#wrapper {
+  width: 80%;
+  display: grid;
+  grid-template-columns: 80% 20%;
+  font-size: medium;
+}
+
+#wrapper input {
+  height: 2em;
+}
+
+#log {
+  background-color: #222;
+  color: rgb(0, 168, 0);
+  font-family: "Fira Mono", monospace;
+  border: 2px solid black;
+  border-radius: 4px;
+  min-height: 10em;
+  padding: 0 1em 0 1em;
+  margin: 0 0 0.5em 0;
 }

@@ -12,6 +12,12 @@
       href="https://fonts.googleapis.com/icon?family=Material+Icons"
       rel="stylesheet"
     />
+    <% if(display == "console") { %>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fira+Mono:wght@500&display=swap"
+      rel="stylesheet"
+    />
+    <% } %>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
     <script
       src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/p5.min.js"
@@ -26,6 +32,7 @@
       <h1>JS Serial Plotter</h1>
     </header>
     <div class="container">
+      <% if(display == "graph") { %>
       <div id="chart"></div>
       <div id="controls">
         <button disabled class="material-icons control" id="start">
@@ -34,6 +41,13 @@
         <button class="material-icons control" id="stop">pause</button>
         <button class="material-icons control" id="save">file_download</button>
       </div>
+      <% } %> <% if(display == "console") { %>
+      <textarea placeholder="@>Log..." id="log" rows="10" cols="100"></textarea>
+      <div id="wrapper">
+        <input type="text" id="command" placeholder="Befehl..." />
+        <input type="button" id="send" value="senden" />
+      </div>
+      <% } %>
       <button type="submit" id="close">schließen</button>
     </div>
     <script>
@@ -42,14 +56,21 @@
 
       let socket = io(window.location.origin);
 
+      // close active connection
       let closeBtn = document.getElementById("close");
 
+      // console controls
+      let logTxt = document.getElementById("log");
+      let sendBtn = document.getElementById("send");
+      let cmdTxt = document.getElementById("command");
+
+      <% if (display == "graph") { %>
       // controls for the graph
       let stopBtn = document.getElementById("stop");
       let startBtn = document.getElementById("start");
       let saveBtn = document.getElementById("save");
-
       let chart = document.getElementById("chart");
+
       let y = [];
       let active = 1;
 
@@ -68,71 +89,111 @@
         link.click();
         document.body.removeChild(link);
       }
+      <% } %>
+
+      <% if(display == "console") { %>
+        let lines = [];
+      <% } %>
+
 
       function setup() {
-        let canv = createCanvas(chart.offsetWidth - 10, 512);
-        canv.parent("chart");
-        textSize(16);
+        <% if (display == "graph") { %>
+          let canv = createCanvas(chart.offsetWidth - 10, 512);
+          canv.parent("chart");
+          textSize(16);
+        <% } %>
         socket.emit("open", { port, baud });
       }
-
+      <% if(display == "graph") { %>
       function windowResized() {
         resizeCanvas(chart.offsetWidth - 10, 512);
       }
-
+      <% } %>
       closeBtn.addEventListener("click", () => {
         socket.emit("close", { port, baud });
         socket.close();
         window.location.href = window.location.origin;
       });
 
-      stopBtn.addEventListener("click", () => {
-        active = active ^ 1;
-        startBtn.disabled = false;
-        stopBtn.disabled = true;
-      });
+      <% if (display == "graph") { %>
+        stopBtn.addEventListener("click", () => {
+          active = active ^ 1;
+          startBtn.disabled = false;
+          stopBtn.disabled = true;
+        });
 
-      startBtn.addEventListener("click", () => {
-        active = active ^ 1;
-        startBtn.disabled = true;
-        stopBtn.disabled = false;
-      });
+        startBtn.addEventListener("click", () => {
+          active = active ^ 1;
+          startBtn.disabled = true;
+          stopBtn.disabled = false;
+        });
 
-      saveBtn.addEventListener("click", () => {
-        download_csv(y);
-      });
+        saveBtn.addEventListener("click", () => {
+          download_csv(y);
+        });
+      <% } %>
+
+      <% if (display == "console") { %>
+        sendBtn.addEventListener("click", () => {
+          if(cmdTxt.value != "") {
+            const command = cmdTxt.value + "\n";
+            cmdTxt.value = "";
+            socket.emit("command", { command });
+          }
+        });
+
+        cmdTxt.addEventListener("keyup", e => {
+          if(e.keyCode === 13) {
+            e.preventDefault();
+            sendBtn.click();
+          }
+        });
+      <% } %>
 
       socket.on("data", (data) => {
-        if (active === 1) {
-          if (y.length < 512) {
-            y.push(data.value);
-          } else {
-            y.shift();
-            y[511] = data.value;
+        <% if (display == "graph") { %>
+          if (active === 1) {
+            if (y.length < 512) {
+              y.push(parseFloat(data.value) | 0);
+            } else {
+              y.shift();
+              y[511] = (parseFloat(data.value) | 0);
+            }
+
+            let max = Math.max(...y) | 1;
+            let min = Math.min(...y) | 0;
+
+            let max_y = parseInt(1.25 * max);
+            let min_y = parseInt(0.75 * min);
+
+            let span = max_y - min_y;
+
+            background(255);
+
+            stroke(0);
+            fill(0);
+            text(`${max_y}`, 0, 20);
+            text(`${min_y}`, 0, height - 4);
+
+            noFill();
+            beginShape();
+            y.forEach((e, i) => {
+              vertex((i * width) / 512, height - ((e - min_y) / span) * height);
+            });
+            endShape();
           }
+        <% } %>
 
-          let max = Math.max(...y) | 1;
-          let min = Math.min(...y) | 0;
-
-          let max_y = parseInt(1.25 * max);
-          let min_y = parseInt(0.75 * min);
-
-          let span = max_y - min_y;
-
-          background(255);
-
-          stroke(0);
-          fill(0);
-          text(`${max_y}`, 0, 20);
-          text(`${min_y}`, 0, height - 4);
-
-          noFill();
-          beginShape();
-          y.forEach((e, i) => {
-            vertex((i * width) / 512, height - ((e - min_y) / span) * height);
-          });
-          endShape();
-        }
+        <% if (display == "console") { %>
+          if(lines.length < 32) {
+            lines.push("> " + data.value + "\n");
+          } else {
+            lines.shift();
+            lines[31] = "> " + data.value + "\n";
+          }
+          logTxt.innerHTML = lines.join("");
+          logTxt.scrollTop = logTxt.scrollHeight;
+        <% } %>
       });
     </script>
   </body>

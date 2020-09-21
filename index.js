@@ -44,7 +44,7 @@ io.on("connection", (cli) => {
 
     parser.on("data", (line) => {
       cli.emit("data", {
-        value: parseFloat(line),
+        value: line,
       });
     });
   });
@@ -61,5 +61,9 @@ io.on("connection", (cli) => {
     let port_paths = [];
     ports.forEach((elem) => port_paths.push(elem.path));
     cli.emit("ports", { ports: port_paths });
+  });
+
+  cli.on("command", (data) => {
+    serial.write(data.command);
   });
 });
