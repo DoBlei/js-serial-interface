@@ -16,4 +16,4 @@ This little project should allow the user to connect to a serial port via a web 
   - [ ] no port/no baud rate chosen
   - [x] refresh available ports
   - [ ] disable currently active ports
-- [ ] implement sending commands from interface to serial port
+- [x] implement sending commands from interface to serial port
