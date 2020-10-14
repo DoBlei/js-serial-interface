@@ -13,7 +13,8 @@ This little project should allow the user to connect to a serial port via a web 
   - [x] pause/continue
   - [x] export current snapshot as csv
 - [ ] error checking
-  - [ ] no port/no baud rate chosen
+  - [ ] no port/no baud rate
   - [x] refresh available ports
   - [ ] disable currently active ports
 - [x] implement sending commands from interface to serial port
+- [ ] option for custom scaling factor
